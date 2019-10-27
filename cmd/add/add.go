@@ -1,9 +1,9 @@
 package add
 
 import (
-	"bitbucket.org/nordcloud/mfacli/config"
-	"bitbucket.org/nordcloud/mfacli/pkg/secret"
-	"bitbucket.org/nordcloud/mfacli/pkg/vault"
+	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/pkg/secret"
+	"github.com/nordcloud/mfacli/pkg/vault"
 
 	"fmt"
 

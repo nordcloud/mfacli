@@ -1,4 +1,4 @@
-module bitbucket.org/nordcloud/mfacli
+module github.com/nordcloud/mfacli
 
 go 1.12
 

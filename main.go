@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bitbucket.org/nordcloud/mfacli/cmd"
+	"github.com/nordcloud/mfacli/cmd"
 
 	"os"
 )

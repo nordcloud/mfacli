@@ -1,7 +1,7 @@
 package vault
 
 import (
-	"bitbucket.org/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/config"
 
 	"io/ioutil"
 	"net"
