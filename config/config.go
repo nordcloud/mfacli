@@ -1,7 +1,7 @@
 package config
 
 import (
-	"bitbucket.org/nordcloud/mfacli/pkg/secret"
+	"github.com/nordcloud/mfacli/pkg/secret"
 )
 
 const (

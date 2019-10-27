@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"bitbucket.org/nordcloud/mfacli/cmd/add"
-	"bitbucket.org/nordcloud/mfacli/cmd/doc"
-	"bitbucket.org/nordcloud/mfacli/cmd/generate"
-	"bitbucket.org/nordcloud/mfacli/cmd/list"
-	"bitbucket.org/nordcloud/mfacli/cmd/remove"
-	"bitbucket.org/nordcloud/mfacli/cmd/server"
-	"bitbucket.org/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/cmd/add"
+	"github.com/nordcloud/mfacli/cmd/doc"
+	"github.com/nordcloud/mfacli/cmd/generate"
+	"github.com/nordcloud/mfacli/cmd/list"
+	"github.com/nordcloud/mfacli/cmd/remove"
+	"github.com/nordcloud/mfacli/cmd/server"
+	"github.com/nordcloud/mfacli/config"
 
 	"fmt"
 	"os"

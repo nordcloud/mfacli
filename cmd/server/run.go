@@ -1,8 +1,8 @@
 package server
 
 import (
-	"bitbucket.org/nordcloud/mfacli/config"
-	"bitbucket.org/nordcloud/mfacli/pkg/vault"
+	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/pkg/vault"
 
 	"fmt"
 	"os"
