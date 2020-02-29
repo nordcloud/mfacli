@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/nordcloud/mfacli/config"
 	"github.com/nordcloud/mfacli/pkg/vault"
@@ -23,6 +24,8 @@ const (
 	xselCmd            = "xsel"
 	xselTargetsFlag    = "xsel-targets"
 	defaultXselTargets = "primary,clipboard"
+
+	pbcopyCmd = "pbcopy"
 )
 
 func CreateTypeCmd(cfg *config.Config) *cobra.Command {
@@ -43,7 +46,12 @@ func CreateClipboardCmd(cfg *config.Config) *cobra.Command {
 
 	cmd := createGenerateCmd(cfg, "clipboard", "Copy the TOTP code to the clipboard", func(code string, newLine bool) error {
 		for _, target := range strings.Split(xselTargets, ",") {
-			cmd := exec.Command("xsel", "--input", "--"+target)
+			var cmd *exec.Cmd
+			if runtime.GOOS == config.DarwinGOOS {
+				cmd = exec.Command(pbcopyCmd, "<<<", target)
+			} else {
+				cmd = exec.Command(xselCmd, "--input", "--"+target)
+			}
 			pipe, err := cmd.StdinPipe()
 			if err != nil {
 				return err
