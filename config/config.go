@@ -12,6 +12,8 @@ const (
 	InternalRunServerCmd = "_run_server"
 
 	FlagServerLogFile = "server-log-file"
+
+	DarwinGOOS = "darwin"
 )
 
 var (
