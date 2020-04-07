@@ -6,6 +6,7 @@ import (
 	"github.com/nordcloud/mfacli/cmd/generate"
 	"github.com/nordcloud/mfacli/cmd/list"
 	"github.com/nordcloud/mfacli/cmd/remove"
+	"github.com/nordcloud/mfacli/cmd/rename"
 	"github.com/nordcloud/mfacli/cmd/server"
 	"github.com/nordcloud/mfacli/config"
 
@@ -77,6 +78,7 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(add.Create(&globalCfg))
 	rootCmd.AddCommand(list.Create(&globalCfg))
 	rootCmd.AddCommand(remove.Create(&globalCfg))
+	rootCmd.AddCommand(rename.Create(&globalCfg))
 	rootCmd.AddCommand(server.CreateRunCmd(&globalCfg))
 	rootCmd.AddCommand(server.CreateStartCmd(&globalCfg))
 	rootCmd.AddCommand(server.CreateStopCmd(&globalCfg))

@@ -23,6 +23,11 @@ type AddClientInput struct {
 	Secret   string
 }
 
+type RenameClientRequest struct {
+	Old string
+	New string
+}
+
 func (r *RemoteVault) GetSecret(clientId string, secretP *string) error {
 	secret, err := r.vault.getSecret(clientId)
 	if err != nil {
@@ -44,6 +49,10 @@ func (r *RemoteVault) ListClients(input struct{}, output *[]string) error {
 
 func (r *RemoteVault) RemoveClient(clientId string, output *bool) error {
 	return r.vault.removeClient(clientId)
+}
+
+func (r *RemoteVault) RenameClient(request RenameClientRequest, output *bool) error {
+	return r.vault.renameClient(request.Old, request.New)
 }
 
 func (r *RemoteVault) Exit(input struct{}, output *bool) error {

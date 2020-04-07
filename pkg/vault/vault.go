@@ -18,7 +18,10 @@ type Vault struct {
 	Path    string
 }
 
-const ErrClientNotFound = "Client ID not found"
+const (
+	ErrClientNotFound      = "Client ID not found"
+	ErrClientAlreadyExists = "Client already exists"
+)
 
 func newVault(cfg *config.Config, create bool, key []byte) (*Vault, error) {
 	vaultData, err := ioutil.ReadFile(cfg.VaultPath)
@@ -91,6 +94,22 @@ func (v *Vault) listClients() (clients []string) {
 
 func (v *Vault) removeClient(clientId string) error {
 	delete(v.Secrets, clientId)
+	return v.save()
+}
+
+func (v *Vault) renameClient(oldClientId, newClientId string) error {
+	secret, ok := v.Secrets[oldClientId]
+	if !ok {
+		return fmt.Errorf(ErrClientNotFound)
+	}
+
+	if _, ok := v.Secrets[newClientId]; ok {
+		return fmt.Errorf(ErrClientAlreadyExists)
+	}
+
+	delete(v.Secrets, oldClientId)
+	v.Secrets[newClientId] = secret
+
 	return v.save()
 }
 
@@ -189,6 +208,29 @@ func RemoveClient(clientId string, cfg *config.Config) error {
 
 	err := callServer(cfg, true, false, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.RemoveClient", clientId, nil)
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func RenameClient(oldClientId, newClientId string, cfg *config.Config) error {
+	if cfg.NoCache {
+		v, err := newVault(cfg, false, nil)
+		if err != nil {
+			return err
+		}
+		return v.renameClient(oldClientId, newClientId)
+	}
+
+	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+		request := RenameClientRequest{
+			Old: oldClientId,
+			New: newClientId,
+		}
+		return c.Call("RemoteVault.RenameClient", request, nil)
 	})
 	if err != nil {
 		return err
