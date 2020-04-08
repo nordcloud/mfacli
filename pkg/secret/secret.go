@@ -2,10 +2,17 @@ package secret
 
 import (
 	"fmt"
+	"image"
+	_ "image/png"
 	"io/ioutil"
+	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 
+	"github.com/makiuchi-d/gozxing"
+	"github.com/makiuchi-d/gozxing/qrcode"
+	"github.com/nordcloud/ncerrors/errors"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -21,12 +28,16 @@ func (s *SecretValue) String() string {
 func (s *SecretValue) Set(arg string) error {
 	var err error
 
-	if strings.HasPrefix(arg, "pass:") && len(arg) > 5 {
-		s.value = arg[5:]
-	} else if strings.HasPrefix(arg, "file:") && len(arg) > 5 {
-		err = s.setFromFile(arg[5:])
-	} else if strings.HasPrefix(arg, "env:") && len(arg) > 4 {
-		err = s.setFromEnv(arg[4:])
+	if val, ok := stripPrefix(arg, "pass:"); ok {
+		s.value = val
+	} else if val, ok := stripPrefix(arg, "file:"); ok {
+		err = s.setFromFile(val)
+	} else if val, ok := stripPrefix(arg, "env:"); ok {
+		err = s.setFromEnv(val)
+	} else if arg == "qr-scan" {
+		err = s.setFromQRScan()
+	} else if val, ok := stripPrefix(arg, "qr-file:"); ok {
+		err = s.setFromQRFile(val)
 	} else {
 		err = fmt.Errorf("Invalid secret format")
 	}
@@ -64,6 +75,66 @@ func (s *SecretValue) setFromEnv(env string) error {
 	return nil
 }
 
+func (s *SecretValue) setFromQRScan() error {
+	tmpFile, err := ioutil.TempFile("", "mfacli-img*.png")
+	if err != nil {
+		return err
+	}
+	filename := tmpFile.Name()
+	defer os.Remove(filename)
+
+	if err := exec.Command("import", filename).Run(); err != nil {
+		return err
+	}
+
+	return s.setFromQRFile(filename)
+}
+
+func (s *SecretValue) setFromQRFile(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return err
+	}
+
+	bmp, err := gozxing.NewBinaryBitmapFromImage(img)
+	if err != nil {
+		return err
+	}
+
+	qrReader := qrcode.NewQRCodeReader()
+	res, err := qrReader.DecodeWithoutHints(bmp)
+	if err != nil {
+		return errors.WithContext(err, "Failed to decode qr code", nil)
+	}
+
+	s.value = tryParseUrl(res.String())
+	return nil
+}
+
+func tryParseUrl(raw string) string {
+	url, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+
+	if url.Scheme != "otpauth" {
+		return raw
+	}
+
+	secret := url.Query().Get("secret")
+	if secret == "" {
+		return raw
+	}
+
+	return secret
+}
+
 func ReadSecret(prompt, confirmPrompt string) (string, error) {
 	value, err := readSecret(prompt)
 	if confirmPrompt == "" || err != nil {
@@ -95,4 +166,13 @@ func readSecret(prompt string) (string, error) {
 
 		fmt.Fprintln(os.Stderr, "Empty input is not allowed")
 	}
+}
+
+func stripPrefix(s, prefix string) (string, bool) {
+	prefixLen := len(prefix)
+	if len(s) <= prefixLen || !strings.HasPrefix(s, prefix) {
+		return "", false
+	}
+
+	return s[prefixLen:], true
 }

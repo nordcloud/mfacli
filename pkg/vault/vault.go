@@ -233,3 +233,23 @@ func RenameClient(oldClientId, newClientId string, cfg *config.Config) error {
 		return c.Call("RemoteVault.RenameClient", request, nil)
 	})
 }
+
+func GetSecrets(cfg *config.Config) (map[string]string, error) {
+	if cfg.NoCache {
+		v, err := newVault(cfg, false, nil)
+		if err != nil {
+			return nil, err
+		}
+		return v.Secrets, nil
+	}
+
+	var secrets map[string]string
+	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+		return c.Call("RemoteVault.GetSecrets", struct{}{}, &secrets)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return secrets, nil
+}

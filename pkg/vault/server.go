@@ -47,6 +47,11 @@ func (r *RemoteVault) ListClients(input struct{}, output *[]string) error {
 	return nil
 }
 
+func (r *RemoteVault) GetSecrets(input struct{}, output *map[string]string) error {
+	*output = r.vault.Secrets
+	return nil
+}
+
 func (r *RemoteVault) RemoveClient(clientId string, output *bool) error {
 	return r.vault.removeClient(clientId)
 }
