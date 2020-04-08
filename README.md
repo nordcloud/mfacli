@@ -31,7 +31,7 @@ if the `--secret` flag (or its short form `-s`) is omitted the value for the new
 - `qr-scan`: a QR code is scanned from the screen and its decoded value is used as the new secret
 - `qr-file:<IMAGE_FILE>`: a QR code is read from the `<IMAGE_FILE>` and its decoded value is used as the new secret
 - `env:<ENV>`: the secret is set to the value of the `<ENV>` environment variable
-- `file:<FILENAME>`: the secret is set to the whole contents of the file `<FILENAME>` (including a possible newline!)
+- `file:<FILENAME>`: the secret is set to the whole content of the file `<FILENAME>` (including a possible newline!)
 - `pass:<PLAIN_TEXT>`: the secret is set to `<PLAIN_TEXT>`
 
 Note: the QR code scanning from the screen assumes the `import` command from the [Imagemagick](http://imagemagick.sourceforge.net/http/www/import.html) toolkit is installed on the system.
