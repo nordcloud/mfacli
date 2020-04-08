@@ -225,16 +225,11 @@ func RenameClient(oldClientId, newClientId string, cfg *config.Config) error {
 		return v.renameClient(oldClientId, newClientId)
 	}
 
-	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+	return callServer(cfg, true, false, func(c *rpc.Client) error {
 		request := RenameClientRequest{
 			Old: oldClientId,
 			New: newClientId,
 		}
 		return c.Call("RemoteVault.RenameClient", request, nil)
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
