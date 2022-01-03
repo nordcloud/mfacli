@@ -1,9 +1,6 @@
 package generate
 
 import (
-	"github.com/nordcloud/mfacli/config"
-	"github.com/nordcloud/mfacli/pkg/vault"
-
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -13,6 +10,9 @@ import (
 	"github.com/pquerna/otp/totp"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/pkg/vault"
 )
 
 const (
@@ -117,7 +117,7 @@ func createGenerateCmd(cfg *config.Config, name, description string, handlerFn f
 		},
 	}
 
-	cmd.Flags().BoolVar(&newLine, newLineFlag, false, "Add a newline character to the result TOTP code string")
+	cmd.Flags().BoolVarP(&newLine, newLineFlag, "n", false, "Append a newline character to the generated TOTP code")
 
 	return cmd
 }
