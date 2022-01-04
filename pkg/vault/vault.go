@@ -137,7 +137,7 @@ func GetSecret(clientId string, cfg *config.Config) (string, error) {
 	}
 
 	var secret string
-	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+	err := callServer(cfg, false, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.GetSecret", clientId, &secret)
 	})
 	if err != nil {
@@ -173,7 +173,7 @@ func AddClient(clientId string, newSecret *secret.SecretValue, cfg *config.Confi
 		return err
 	}
 
-	return callServer(cfg, true, true, func(c *rpc.Client) error {
+	return callServer(cfg, true, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.AddClient", AddClientInput{clientId, secret}, nil)
 	})
 }
@@ -188,7 +188,7 @@ func ListClients(cfg *config.Config) ([]string, error) {
 	}
 
 	var clients []string
-	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+	err := callServer(cfg, false, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.ListClients", struct{}{}, &clients)
 	})
 	if err != nil {
@@ -206,7 +206,7 @@ func RemoveClient(clientId string, cfg *config.Config) error {
 		return v.removeClient(clientId)
 	}
 
-	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+	err := callServer(cfg, false, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.RemoveClient", clientId, nil)
 	})
 	if err != nil {
@@ -225,7 +225,7 @@ func RenameClient(oldClientId, newClientId string, cfg *config.Config) error {
 		return v.renameClient(oldClientId, newClientId)
 	}
 
-	return callServer(cfg, true, false, func(c *rpc.Client) error {
+	return callServer(cfg, false, func(c *rpc.Client) error {
 		request := RenameClientRequest{
 			Old: oldClientId,
 			New: newClientId,
@@ -244,7 +244,7 @@ func GetSecrets(cfg *config.Config) (map[string]string, error) {
 	}
 
 	var secrets map[string]string
-	err := callServer(cfg, true, false, func(c *rpc.Client) error {
+	err := callServer(cfg, false, func(c *rpc.Client) error {
 		return c.Call("RemoteVault.GetSecrets", struct{}{}, &secrets)
 	})
 	if err != nil {

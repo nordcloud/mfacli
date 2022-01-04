@@ -14,17 +14,14 @@ import (
 	"github.com/nordcloud/ncerrors/errors"
 )
 
-func connect(cfg *config.Config, tryStart, create bool) (*rpc.Client, error) {
-	connectFn := func() (*rpc.Client, error) {
-		return rpc.Dial("unix", cfg.SocketPath)
-	}
+func connectBasic(cfg *config.Config) (*rpc.Client, error) {
+	return rpc.Dial("unix", cfg.SocketPath)
+}
 
-	c, err := connectFn()
+func connect(cfg *config.Config, create bool) (*rpc.Client, error) {
+	c, err := connectBasic(cfg)
 	if err == nil {
 		return c, nil
-	}
-	if !tryStart {
-		return nil, err
 	}
 	if err := handleConnectError(err, cfg.SocketPath); err != nil {
 		return nil, err
@@ -42,7 +39,7 @@ func connect(cfg *config.Config, tryStart, create bool) (*rpc.Client, error) {
 
 	start := time.Now()
 	for {
-		c, err = connectFn()
+		c, err = connectBasic(cfg)
 		if time.Since(start) > 2*time.Second || err == nil {
 			break
 		}
@@ -93,8 +90,8 @@ func handleConnectError(connErr error, sockPath string) error {
 	return connErr
 }
 
-func callServer(cfg *config.Config, tryStart, create bool, fn func(c *rpc.Client) error) error {
-	c, err := connect(cfg, tryStart, create)
+func callServer(cfg *config.Config, create bool, fn func(c *rpc.Client) error) error {
+	c, err := connect(cfg, create)
 	if err != nil {
 		return err
 	}
@@ -153,7 +150,7 @@ func StartServer(cfg *config.Config) error {
 }
 
 func CloseServer(cfg *config.Config) {
-	c, _ := connect(cfg, false, false)
+	c, _ := connectBasic(cfg)
 	if c != nil {
 		c.Call("RemoteVault.Exit", struct{}{}, nil)
 	}
