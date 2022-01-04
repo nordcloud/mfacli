@@ -1,12 +1,17 @@
 package vault
 
 import (
-	"github.com/nordcloud/mfacli/config"
-
+	"net"
 	"net/rpc"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/ncerrors/errors"
 )
 
 func connect(cfg *config.Config, tryStart, create bool) (*rpc.Client, error) {
@@ -19,6 +24,9 @@ func connect(cfg *config.Config, tryStart, create bool) (*rpc.Client, error) {
 		return c, nil
 	}
 	if !tryStart {
+		return nil, err
+	}
+	if err := handleConnectError(err, cfg.SocketPath); err != nil {
 		return nil, err
 	}
 
@@ -44,6 +52,45 @@ func connect(cfg *config.Config, tryStart, create bool) (*rpc.Client, error) {
 	}
 
 	return c, nil
+}
+
+func handleConnectError(connErr error, sockPath string) error {
+	opErr, ok := connErr.(*net.OpError)
+	if !ok {
+		return connErr
+	}
+	netErr, ok := opErr.Unwrap().(*os.SyscallError)
+	if !ok {
+		return connErr
+	}
+
+	switch netErr.Unwrap() {
+	case syscall.ECONNREFUSED:
+		// The socket file exists but either not bound, or is not a socket
+		s, err := os.Stat(sockPath)
+		if err != nil {
+			log.WithError(err).WithField("socket_path", sockPath).Debug("Failed to check socket file")
+			return connErr
+		}
+		if s.Mode().Type()&os.ModeSocket == 0 {
+			return errors.WithContext(connErr, "not a socket", errors.Fields{
+				"socket_path": sockPath,
+			})
+		}
+
+		log.WithField("socket_path", sockPath).Debug("Socket exists, but not bound, removing")
+		if err := os.Remove(sockPath); err != nil {
+			log.WithField("socket_path", sockPath).WithError(err).Debug("Failed to remove orphaned socket file")
+			return connErr
+		}
+
+		return nil
+	case syscall.ENOENT:
+		log.Debug("No socket file found, starting the server")
+		return nil
+	}
+
+	return connErr
 }
 
 func callServer(cfg *config.Config, tryStart, create bool, fn func(c *rpc.Client) error) error {
