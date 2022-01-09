@@ -1,10 +1,10 @@
 package server
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/nordcloud/mfacli/config"
 	"github.com/nordcloud/mfacli/pkg/vault"
-
-	"github.com/spf13/cobra"
 )
 
 func CreateStartCmd(cfg *config.Config) *cobra.Command {

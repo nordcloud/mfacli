@@ -1,8 +1,6 @@
 package vault
 
 import (
-	"github.com/nordcloud/mfacli/config"
-
 	"io/ioutil"
 	"net"
 	"net/rpc"
@@ -11,57 +9,31 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/nordcloud/mfacli/config"
 )
 
-type RemoteVault struct {
-	vault *Vault
+const (
+	serverName = "VaultServer"
+)
+
+type VaultServer struct {
+	vault *localVault
 	lis   net.Listener
 }
 
-type AddClientInput struct {
-	ClientId string
-	Secret   string
-}
-
-type RenameClientRequest struct {
-	Old string
-	New string
-}
-
-func (r *RemoteVault) GetSecret(clientId string, secretP *string) error {
-	secret, err := r.vault.getSecret(clientId)
-	if err != nil {
-		return err
-	}
-	*secretP = secret
+func (s *VaultServer) GetSecrets(input struct{}, secrets *map[string]string) error {
+	*secrets = s.vault.secrets
 	return nil
 }
 
-func (r *RemoteVault) AddClient(input AddClientInput, output *bool) error {
-	return r.vault.addClient(input.ClientId, input.Secret)
+func (s *VaultServer) StoreSecrets(secrets map[string]string, output *struct{}) error {
+	s.vault.secrets = secrets
+	return s.vault.save()
 }
 
-func (r *RemoteVault) ListClients(input struct{}, output *[]string) error {
-	clients := r.vault.listClients()
-	*output = clients
-	return nil
-}
-
-func (r *RemoteVault) GetSecrets(input struct{}, output *map[string]string) error {
-	*output = r.vault.Secrets
-	return nil
-}
-
-func (r *RemoteVault) RemoveClient(clientId string, output *bool) error {
-	return r.vault.removeClient(clientId)
-}
-
-func (r *RemoteVault) RenameClient(request RenameClientRequest, output *bool) error {
-	return r.vault.renameClient(request.Old, request.New)
-}
-
-func (r *RemoteVault) Exit(input struct{}, output *bool) error {
-	r.lis.Close()
+func (s *VaultServer) Stop(input struct{}, output *struct{}) error {
+	s.lis.Close()
 	return nil
 }
 
@@ -70,7 +42,7 @@ func RunServer(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	vault, err := newVault(cfg, false, key)
+	vault, err := openLocalWithKey(cfg.VaultPath, key)
 	if err != nil {
 		return err
 	}
@@ -80,29 +52,34 @@ func RunServer(cfg *config.Config) error {
 		return err
 	}
 
-	defer func(lis net.Listener) {
-		lis.Close()
-	}(lis)
-
+	defer lis.Close()
 	go handleSignals(lis)
 
-	err = rpc.Register(&RemoteVault{
+	err = rpc.Register(&VaultServer{
 		lis:   lis,
 		vault: vault,
 	})
 	if err != nil {
-		log.WithError(err).Error("Failed to register remote object")
 		return err
 	}
 	rpc.Accept(lis)
 	return nil
 }
 
+func openLocalWithKey(path string, key []byte) (*localVault, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return loadVaultFile(file, key)
+}
+
 func handleSignals(lis net.Listener) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	<-c
-	log.Info("Caught signal, closing server")
+	s := <-c
+	log.Infof("Caught the %s signal, closing server", s.String())
 	lis.Close()
 	os.Exit(0)
 }

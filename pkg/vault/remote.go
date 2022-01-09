@@ -8,38 +8,82 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nordcloud/ncerrors/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nordcloud/mfacli/config"
-	"github.com/nordcloud/ncerrors/errors"
 )
 
-func connectBasic(cfg *config.Config) (*rpc.Client, error) {
-	return rpc.Dial("unix", cfg.SocketPath)
+type remoteVault struct {
+	client *rpc.Client
 }
 
-func connect(cfg *config.Config, create bool) (*rpc.Client, error) {
-	c, err := connectBasic(cfg)
-	if err == nil {
-		return c, nil
+func (v *remoteVault) GetSecrets() (map[string]string, error) {
+	var secrets map[string]string
+	if err := v.client.Call(serverName+".GetSecrets", struct{}{}, &secrets); err != nil {
+		return nil, err
 	}
+
+	return secrets, nil
+}
+
+func (v *remoteVault) ModifySecrets(modify func(map[string]string) error) error {
+	secrets, err := v.GetSecrets()
+	if err != nil {
+		return err
+	}
+
+	if err := modify(secrets); err != nil {
+		return err
+	}
+
+	if err := v.client.Call(serverName+".StoreSecrets", secrets, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func StartServer(cfg *config.Config) error {
+	vault, err := openRemote(cfg)
+	if err != nil {
+		return err
+	}
+
+	if err := vault.client.Close(); err != nil {
+		log.WithError(err).Info("Failed to close temporary client")
+	}
+	return nil
+}
+
+func StopServer(cfg *config.Config) {
+	client, _ := connect(cfg)
+	if client != nil {
+		client.Call(serverName+".Stop", struct{}{}, nil)
+	}
+}
+
+func openRemote(cfg *config.Config) (*remoteVault, error) {
+	client, err := connect(cfg)
+	if err == nil {
+		return &remoteVault{client: client}, nil
+	}
+
 	if err := handleConnectError(err, cfg.SocketPath); err != nil {
 		return nil, err
 	}
 
-	vlt, err := newVault(cfg, create, nil)
+	vault, err := openLocal(cfg)
 	if err != nil {
 		return nil, err
 	}
-
-	err = startServer(cfg, vlt)
-	if err != nil {
+	if err := startServer(cfg, vault.encKey); err != nil {
 		return nil, err
 	}
 
 	start := time.Now()
 	for {
-		c, err = connectBasic(cfg)
+		client, err = connect(cfg)
 		if time.Since(start) > 2*time.Second || err == nil {
 			break
 		}
@@ -48,7 +92,11 @@ func connect(cfg *config.Config, create bool) (*rpc.Client, error) {
 		return nil, err
 	}
 
-	return c, nil
+	return &remoteVault{client: client}, nil
+}
+
+func connect(cfg *config.Config) (*rpc.Client, error) {
+	return rpc.Dial("unix", cfg.SocketPath)
 }
 
 func handleConnectError(connErr error, sockPath string) error {
@@ -90,27 +138,10 @@ func handleConnectError(connErr error, sockPath string) error {
 	return connErr
 }
 
-func callServer(cfg *config.Config, create bool, fn func(c *rpc.Client) error) error {
-	c, err := connect(cfg, create)
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
-	return fn(c)
-}
-
-func getExecutableName() string {
-	path, err := os.Readlink("/proc/self/exe")
-	if err == nil {
-		return path
-	}
-	return os.Args[0]
-}
-
-func startServer(cfg *config.Config, vlt *Vault) error {
+func startServer(cfg *config.Config, key []byte) error {
 	progname := getExecutableName()
-	args := []string{config.InternalRunServerCmd,
+	args := []string{
+		config.InternalRunServerCmd,
 		"--socket", cfg.SocketPath,
 		"--vault", cfg.VaultPath,
 	}
@@ -129,7 +160,7 @@ func startServer(cfg *config.Config, vlt *Vault) error {
 		return err
 	}
 
-	_, err = pipe.Write(vlt.EncKey)
+	_, err = pipe.Write(key)
 	if err != nil {
 		return err
 	}
@@ -141,17 +172,10 @@ func startServer(cfg *config.Config, vlt *Vault) error {
 	return nil
 }
 
-func StartServer(cfg *config.Config) error {
-	vlt, err := newVault(cfg, true, nil)
-	if err != nil {
-		return err
+func getExecutableName() string {
+	path, err := os.Readlink("/proc/self/exe")
+	if err == nil {
+		return path
 	}
-	return startServer(cfg, vlt)
-}
-
-func CloseServer(cfg *config.Config) {
-	c, _ := connectBasic(cfg)
-	if c != nil {
-		c.Call("RemoteVault.Exit", struct{}{}, nil)
-	}
+	return os.Args[0]
 }

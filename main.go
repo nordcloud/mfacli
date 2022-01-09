@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/nordcloud/mfacli/cmd"
-
 	"os"
+
+	"github.com/nordcloud/mfacli/cmd"
 )
 
 func main() {

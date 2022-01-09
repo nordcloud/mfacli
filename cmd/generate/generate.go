@@ -100,21 +100,23 @@ func createGenerateCmd(cfg *config.Config, name, description string, handlerFn f
 		Use:   name + " CLIENT_ID",
 		Short: description,
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientId := args[0]
-
-			secret, err := vault.GetSecret(clientId, cfg)
+		RunE: vault.RunOnVault(cfg, func(vlt vault.Vault, args ...string) error {
+			secrets, err := vlt.GetSecrets()
 			if err != nil {
 				return err
 			}
 
-			code, err := totp.GenerateCode(secret, time.Now())
-			if err != nil {
-				return err
+			if secret := secrets[args[0]]; secret != "" {
+				code, err := totp.GenerateCode(secret, time.Now())
+				if err != nil {
+					return err
+				}
+
+				return handlerFn(code, newLine)
 			}
 
-			return handlerFn(code, newLine)
-		},
+			return vault.ErrClientNotFound
+		}),
 	}
 
 	cmd.Flags().BoolVarP(&newLine, newLineFlag, "n", false, "Append a newline character to the generated TOTP code")

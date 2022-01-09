@@ -53,6 +53,26 @@ func (s *SecretValue) Type() string {
 	return "secret"
 }
 
+func (s *SecretValue) ReadSecret(prompt, confirmPrompt string) (string, error) {
+	if s.isSet {
+		return s.value, nil
+	}
+
+	value, err := readSecret(prompt)
+	if confirmPrompt == "" || err != nil {
+		return value, err
+	}
+
+	var confirmation string
+	for value != confirmation {
+		confirmation, err = readSecret(confirmPrompt)
+		if err != nil {
+			return "", err
+		}
+	}
+	return value, nil
+}
+
 func (s *SecretValue) IsSet() bool {
 	return s.isSet
 }
@@ -133,22 +153,6 @@ func tryParseUrl(raw string) string {
 	}
 
 	return secret
-}
-
-func ReadSecret(prompt, confirmPrompt string) (string, error) {
-	value, err := readSecret(prompt)
-	if confirmPrompt == "" || err != nil {
-		return value, err
-	}
-
-	var confirmation string
-	for value != confirmation {
-		confirmation, err = readSecret(confirmPrompt)
-		if err != nil {
-			return "", err
-		}
-	}
-	return value, nil
 }
 
 func readSecret(prompt string) (string, error) {

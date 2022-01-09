@@ -1,6 +1,13 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/nordcloud/mfacli/cmd/add"
 	"github.com/nordcloud/mfacli/cmd/doc"
 	"github.com/nordcloud/mfacli/cmd/dump"
@@ -10,13 +17,6 @@ import (
 	"github.com/nordcloud/mfacli/cmd/rename"
 	"github.com/nordcloud/mfacli/cmd/server"
 	"github.com/nordcloud/mfacli/config"
-
-	"fmt"
-	"os"
-	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 var (

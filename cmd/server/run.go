@@ -1,14 +1,14 @@
 package server
 
 import (
-	"github.com/nordcloud/mfacli/config"
-	"github.com/nordcloud/mfacli/pkg/vault"
-
 	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/pkg/vault"
 )
 
 func CreateRunCmd(cfg *config.Config) *cobra.Command {

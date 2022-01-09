@@ -1,10 +1,10 @@
 package remove
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/nordcloud/mfacli/config"
 	"github.com/nordcloud/mfacli/pkg/vault"
-
-	"github.com/spf13/cobra"
 )
 
 func Create(cfg *config.Config) *cobra.Command {
@@ -12,8 +12,11 @@ func Create(cfg *config.Config) *cobra.Command {
 		Use:   "remove CLIENT_ID",
 		Short: "Remove client ID from the vault",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return vault.RemoveClient(args[0], cfg)
-		},
+		RunE: vault.RunOnVault(cfg, func(vlt vault.Vault, args ...string) error {
+			return vlt.ModifySecrets(func(secrets map[string]string) error {
+				delete(secrets, args[0])
+				return nil
+			})
+		}),
 	}
 }
