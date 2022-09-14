@@ -29,14 +29,21 @@ const (
 
 func CreateTypeCmd(cfg *config.Config) *cobra.Command {
 	return createGenerateCmd(cfg, "type", "Simulate typing of the TOTP code", func(code string, newLine bool) error {
-		if newLine {
-			code += "\n"
-		}
-
-		args := []string{"type", code}
+		args := []string{"type", "--clearmodifiers", code}
 		log.WithField("args", args).Debug("Running " + xdotoolCmd)
 		cmd := exec.Command(xdotoolCmd, args...)
-		return cmd.Run()
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+
+		if newLine {
+			args := []string{"key", "--clearmodifiers", "Return"}
+			log.WithField("args", args).Debug("Running " + xdotoolCmd)
+			cmd = exec.Command(xdotoolCmd, args...)
+			return cmd.Run()
+		}
+
+		return nil
 	})
 }
 
