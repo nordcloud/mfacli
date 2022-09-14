@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/makiuchi-d/gozxing v0.0.0-20190830103442-eaff64b1ceb7
-	github.com/nordcloud/ncerrors v1.1.0
+	github.com/pkg/errors v0.8.1
 	github.com/pquerna/otp v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5

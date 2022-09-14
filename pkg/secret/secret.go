@@ -12,7 +12,7 @@ import (
 
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
-	"github.com/nordcloud/ncerrors/errors"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -39,7 +39,7 @@ func (s *SecretValue) Set(arg string) error {
 	} else if val, ok := stripPrefix(arg, "qr-file:"); ok {
 		err = s.setFromQRFile(val)
 	} else {
-		err = fmt.Errorf("Invalid secret format")
+		err = errors.Errorf("Invalid secret format")
 	}
 
 	if err == nil {
@@ -89,7 +89,7 @@ func (s *SecretValue) setFromFile(filename string) error {
 func (s *SecretValue) setFromEnv(env string) error {
 	val, ok := os.LookupEnv(env)
 	if !ok {
-		return fmt.Errorf("Secret env %s is not set", env)
+		return errors.Errorf("Secret env %s is not set", env)
 	}
 	s.value = val
 	return nil
@@ -130,7 +130,7 @@ func (s *SecretValue) setFromQRFile(filename string) error {
 	qrReader := qrcode.NewQRCodeReader()
 	res, err := qrReader.DecodeWithoutHints(bmp)
 	if err != nil {
-		return errors.WithContext(err, "Failed to decode qr code", nil)
+		return errors.Wrap(err, "failed to decode qr code")
 	}
 
 	s.value = tryParseUrl(res.String())

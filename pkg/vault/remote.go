@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nordcloud/ncerrors/errors"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nordcloud/mfacli/config"
@@ -118,9 +118,7 @@ func handleConnectError(connErr error, sockPath string) error {
 			return connErr
 		}
 		if s.Mode().Type()&os.ModeSocket == 0 {
-			return errors.WithContext(connErr, "not a socket", errors.Fields{
-				"socket_path": sockPath,
-			})
+			return errors.Wrapf(connErr, "not a socket: %s", sockPath)
 		}
 
 		log.WithField("socket_path", sockPath).Debug("Socket exists, but not bound, removing")
