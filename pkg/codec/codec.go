@@ -10,6 +10,10 @@ import (
 	"fmt"
 )
 
+var (
+	ErrInvalidPassword = fmt.Errorf("Invalid password")
+)
+
 func BuildEncKey(password string) []byte {
 	sum := sha256.Sum256([]byte(password))
 	result := make([]byte, sha256.Size)
@@ -36,7 +40,7 @@ func Decrypt(encrypted []byte, key []byte) (map[string]string, error) {
 
 	decryptedKey, decrypted := decrypted[:sha256.Size], decrypted[sha256.Size:]
 	if bytes.Compare(decryptedKey, key) != 0 {
-		return nil, fmt.Errorf("Invalid password")
+		return nil, ErrInvalidPassword
 	}
 
 	decrypted = unpad(decrypted)

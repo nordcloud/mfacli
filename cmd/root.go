@@ -70,6 +70,7 @@ func addFlags(rootCmd *cobra.Command, defaultSocket, defaultVault string) {
 	rootCmd.PersistentFlags().StringVar(&globalCfg.ServerLogFile, config.FlagServerLogFile, "", "Server log file")
 	rootCmd.PersistentFlags().BoolVar(&globalCfg.NoCache, "no-cache", false, "don't use vault cache server")
 	rootCmd.PersistentFlags().Var(&globalCfg.Password, "password", "vault password in a format accepted by openssl (env:*, file:* or pass:*)")
+	rootCmd.PersistentFlags().StringVar(&globalCfg.PasswordCommand, "password-command", "", "an optional command for reading the password")
 }
 
 func addSubcommands(rootCmd *cobra.Command) {

@@ -1,11 +1,13 @@
 package vault
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 
 	"github.com/nordcloud/mfacli/config"
 	"github.com/nordcloud/mfacli/pkg/codec"
+	"github.com/nordcloud/mfacli/pkg/password"
 )
 
 type localVault struct {
@@ -46,32 +48,24 @@ func (v *localVault) save() error {
 }
 
 func openLocal(cfg *config.Config) (*localVault, error) {
-	vaultFile, err := os.Open(cfg.VaultPath)
+	vault, err := readVaultFile(cfg)
 	if err == nil {
-		defer vaultFile.Close()
-
-		password, err := cfg.Password.ReadSecret("Password: ", "")
-		if err != nil {
-			return nil, err
-		}
-
-		return loadVaultFile(vaultFile, codec.BuildEncKey(password))
+		return vault, nil
 	}
 	if !os.IsNotExist(err) {
 		return nil, err
 	}
 
-	password, err := cfg.Password.ReadSecret("Set up new password: ", "Repeat the password: ")
+	pwd, err := password.CreatePassword(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	vault := &localVault{
+	vault = &localVault{
 		secrets: make(map[string]string),
-		encKey:  codec.BuildEncKey(password),
+		encKey:  codec.BuildEncKey(pwd),
 		path:    cfg.VaultPath,
 	}
-
 	if err := vault.save(); err != nil {
 		return nil, err
 	}
@@ -79,20 +73,37 @@ func openLocal(cfg *config.Config) (*localVault, error) {
 	return vault, nil
 }
 
-func loadVaultFile(file *os.File, key []byte) (*localVault, error) {
+func readVaultFile(cfg *config.Config) (*localVault, error) {
+	file, err := os.Open(cfg.VaultPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
 
-	secrets, err := codec.Decrypt(data, key)
+	pwd, err := password.ReadPassword(cfg, "Password")
+	if err != nil {
+		return nil, err
+	}
+	secrets, err := codec.Decrypt(data, codec.BuildEncKey(pwd))
+	for errors.Is(err, codec.ErrInvalidPassword) {
+		pwd, err = password.ReadPassword(cfg, "Invalid password. Try again")
+		if err != nil {
+			return nil, err
+		}
+		secrets, err = codec.Decrypt(data, codec.BuildEncKey(pwd))
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	return &localVault{
 		secrets: secrets,
-		encKey:  key,
+		encKey:  codec.BuildEncKey(pwd),
 		path:    file.Name(),
 	}, nil
 }

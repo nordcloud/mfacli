@@ -21,9 +21,10 @@ var (
 )
 
 type Config struct {
-	SocketPath    string
-	VaultPath     string
-	NoCache       bool
-	Password      secret.SecretValue
-	ServerLogFile string
+	SocketPath      string
+	VaultPath       string
+	NoCache         bool
+	Password        secret.SecretValue
+	ServerLogFile   string
+	PasswordCommand string
 }

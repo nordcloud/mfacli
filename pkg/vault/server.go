@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nordcloud/mfacli/config"
+	"github.com/nordcloud/mfacli/pkg/codec"
 )
 
 const (
@@ -71,8 +72,20 @@ func openLocalWithKey(path string, key []byte) (*localVault, error) {
 	if err != nil {
 		return nil, err
 	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	secrets, err := codec.Decrypt(data, key)
+	if err != nil {
+		return nil, err
+	}
 
-	return loadVaultFile(file, key)
+	return &localVault{
+		secrets: secrets,
+		encKey:  key,
+		path:    path,
+	}, nil
 }
 
 func handleSignals(lis net.Listener) {
