@@ -12,8 +12,9 @@ import (
 
 func Create(cfg *config.Config) *cobra.Command {
 	return &cobra.Command{
-		Use:   "dump-secrets-unencrypted",
-		Short: "Dump secrets stored in the vault in un-encrypted form to stdout (e.g. for backup purposes)",
+		Use:    "dump-secrets-unencrypted",
+		Short:  "Dump secrets stored in the vault in un-encrypted form to stdout (e.g. for backup purposes)",
+		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			newCfg := *cfg
 			newCfg.NoCache = true // always ask for password for this action
