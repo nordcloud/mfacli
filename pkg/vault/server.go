@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -63,6 +64,13 @@ func RunServer(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		time.Sleep(8 * time.Hour)
+		log.Info("closing listener after timeout")
+		lis.Close()
+	}()
+
 	rpc.Accept(lis)
 	return nil
 }
