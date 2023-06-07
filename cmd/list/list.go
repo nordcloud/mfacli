@@ -2,6 +2,7 @@ package list
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/spf13/cobra"
 
@@ -20,9 +21,16 @@ func Create(cfg *config.Config) *cobra.Command {
 				return err
 			}
 
-			for c := range secrets {
-				fmt.Println(c)
+			names := make([]string, 0, len(secrets))
+			for name := range secrets {
+				names = append(names, name)
 			}
+			sort.Strings(names)
+
+			for _, name := range names {
+				fmt.Println(name)
+			}
+
 			return nil
 		}),
 	}
