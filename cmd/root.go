@@ -85,6 +85,7 @@ func addSubcommands(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(server.CreateRunCmd(&globalCfg))
 	rootCmd.AddCommand(server.CreateStartCmd(&globalCfg))
 	rootCmd.AddCommand(server.CreateStopCmd(&globalCfg))
+	rootCmd.AddCommand(createBachCompletionCmd())
 	doc.Bind(rootCmd)
 }
 
