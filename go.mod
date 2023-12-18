@@ -8,7 +8,6 @@ require (
 	github.com/pquerna/otp v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/crypto v0.17.0
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 )
